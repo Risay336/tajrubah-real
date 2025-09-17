@@ -24,6 +24,21 @@ const LanguageSelect: React.FC<{
     </div>
 );
 
+const InfoBox: React.FC<{ title: string; content: string | null; isLoading: boolean; }> = ({ title, content, isLoading }) => (
+    <div className="w-full p-4 bg-black/40 text-white rounded-xl relative min-h-[120px] flex-shrink-0">
+        <h3 className="text-sm font-bold text-blue-200 mb-2">{title}</h3>
+        {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-300"></div>
+            </div>
+        )}
+        {content && !isLoading && (
+            <p className="whitespace-pre-wrap">{content}</p>
+        )}
+    </div>
+);
+
+
 const TranslatorScreen: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
@@ -31,26 +46,40 @@ const TranslatorScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sourceLang, setSourceLang] = useState('English');
   const [targetLang, setTargetLang] = useState('Indonesian');
-  const [additionalInfo, setAdditionalInfo] = useState<string | null>(null);
-  const [isInfoLoading, setIsInfoLoading] = useState(false);
+  
+  const [sourceDefinition, setSourceDefinition] = useState<string | null>(null);
+  const [sourceExamples, setSourceExamples] = useState<string | null>(null);
+  const [targetDefinition, setTargetDefinition] = useState<string | null>(null);
+  const [targetExamples, setTargetExamples] = useState<string | null>(null);
+
+  const [isSourceDefinitionLoading, setIsSourceDefinitionLoading] = useState(false);
+  const [isSourceExamplesLoading, setIsSourceExamplesLoading] = useState(false);
+  const [isTargetDefinitionLoading, setIsTargetDefinitionLoading] = useState(false);
+  const [isTargetExamplesLoading, setIsTargetExamplesLoading] = useState(false);
 
   const { settings } = useSettings();
   const { t } = useTranslation();
 
+  const clearAllInfo = useCallback(() => {
+    setSourceDefinition(null);
+    setSourceExamples(null);
+    setTargetDefinition(null);
+    setTargetExamples(null);
+    setError(null);
+  }, []);
+
   useEffect(() => {
     if (!inputText.trim()) {
       setOutputText('');
-      setAdditionalInfo(null);
-      setError(null);
+      clearAllInfo();
     }
-  }, [inputText]);
+  }, [inputText, clearAllInfo]);
 
   const handleTranslate = useCallback(async () => {
     if (!inputText.trim()) return;
     setIsLoading(true);
-    setError(null);
     setOutputText('');
-    setAdditionalInfo(null);
+    clearAllInfo();
     try {
       const result = await translateText(inputText, sourceLang, targetLang);
       setOutputText(result);
@@ -59,7 +88,7 @@ const TranslatorScreen: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, sourceLang, targetLang, t]);
+  }, [inputText, sourceLang, targetLang, t, clearAllInfo]);
 
   const swapLanguages = () => {
     const oldSource = sourceLang;
@@ -67,42 +96,74 @@ const TranslatorScreen: React.FC = () => {
     setTargetLang(oldSource);
     setInputText(outputText);
     setOutputText(inputText);
-    setAdditionalInfo(null);
+    clearAllInfo();
   };
 
   const handleClear = () => {
     setInputText('');
   };
 
-  const handleGetDefinition = async () => {
-    if (!outputText.trim()) return;
-    setIsInfoLoading(true);
-    setAdditionalInfo(null);
+  const handleGetSourceDefinition = async () => {
+    if (!inputText.trim()) return;
+    setIsSourceDefinitionLoading(true);
+    setSourceDefinition(null);
     setError(null);
     try {
-      const result = await getDefinition(outputText, targetLang);
-      setAdditionalInfo(result);
+      const result = await getDefinition(inputText, sourceLang);
+      setSourceDefinition(result);
     } catch (err: any) {
       setError(t('error_get_definition'));
     } finally {
-      setIsInfoLoading(false);
+      setIsSourceDefinitionLoading(false);
     }
   };
 
-  const handleGetExamples = async () => {
-    if (!outputText.trim()) return;
-    setIsInfoLoading(true);
-    setAdditionalInfo(null);
+  const handleGetSourceExamples = async () => {
+    if (!inputText.trim()) return;
+    setIsSourceExamplesLoading(true);
+    setSourceExamples(null);
     setError(null);
     try {
-      const result = await getExamples(outputText, sourceLang, targetLang);
-      setAdditionalInfo(result);
+      // Note: we swap target and source to get examples in the source language
+      const result = await getExamples(inputText, targetLang, sourceLang);
+      setSourceExamples(result);
     } catch (err: any) {
       setError(t('error_get_examples'));
     } finally {
-      setIsInfoLoading(false);
+      setIsSourceExamplesLoading(false);
     }
   };
+
+  const handleGetTargetDefinition = async () => {
+    if (!outputText.trim()) return;
+    setIsTargetDefinitionLoading(true);
+    setTargetDefinition(null);
+    setError(null);
+    try {
+      const result = await getDefinition(outputText, targetLang);
+      setTargetDefinition(result);
+    } catch (err: any) {
+      setError(t('error_get_definition'));
+    } finally {
+      setIsTargetDefinitionLoading(false);
+    }
+  };
+
+  const handleGetTargetExamples = async () => {
+    if (!outputText.trim()) return;
+    setIsTargetExamplesLoading(true);
+    setTargetExamples(null);
+    setError(null);
+    try {
+      const result = await getExamples(outputText, sourceLang, targetLang);
+      setTargetExamples(result);
+    } catch (err: any) {
+      setError(t('error_get_examples'));
+    } finally {
+      setIsTargetExamplesLoading(false);
+    }
+  };
+
 
   const buttonStyle = { backgroundColor: settings.theme.translator.main };
   
@@ -132,27 +193,40 @@ const TranslatorScreen: React.FC = () => {
         <LanguageSelect value={targetLang} onChange={setTargetLang} options={languageOptions} />
       </div>
 
-      <div className="flex flex-col gap-4 flex-grow">
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder={t('enter_text_placeholder', { lang: languageOptions.find(l => l.value === sourceLang)?.label || sourceLang })}
-          className="flex-1 w-full p-4 bg-black/30 text-white rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
-        />
-        <div className="flex-1 w-full p-4 bg-black/50 text-white rounded-xl relative overflow-y-auto min-h-[100px]">
+      <div className="flex-1 flex flex-col gap-4 overflow-y-auto pb-2">
+        <div className="relative flex-shrink-0">
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder={t('enter_text_placeholder', { lang: languageOptions.find(l => l.value === sourceLang)?.label || sourceLang })}
+            className="w-full p-4 pr-24 bg-black/30 text-white rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px]"
+          />
+          {inputText && (
+              <div className="absolute bottom-2 right-2 flex gap-2 bg-black/30 p-1 rounded-full">
+                  <button onClick={handleGetSourceDefinition} title={t('get_definition')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                  </button>
+                  <button onClick={handleGetSourceExamples} title={t('get_examples')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  </button>
+              </div>
+          )}
+        </div>
+        
+        <div className="w-full p-4 bg-black/50 text-white rounded-xl relative min-h-[120px] flex-shrink-0">
             {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 rounded-xl">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-300"></div>
                 </div>
             )}
-            {error && !isLoading && <p className="text-red-400">{error}</p>}
+            
             <p className="whitespace-pre-wrap">{outputText}</p>
             {outputText && !isLoading && (
                 <div className="absolute bottom-2 right-2 flex gap-2 bg-black/30 p-1 rounded-full">
-                    <button onClick={handleGetDefinition} title={t('get_definition')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                    <button onClick={handleGetTargetDefinition} title={t('get_definition')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                     </button>
-                    <button onClick={handleGetExamples} title={t('get_examples')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                    <button onClick={handleGetTargetExamples} title={t('get_examples')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </button>
                     <button onClick={handleClear} title={t('clear_text')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
@@ -161,25 +235,44 @@ const TranslatorScreen: React.FC = () => {
                 </div>
             )}
         </div>
-        {(isInfoLoading || additionalInfo) &&
-            <div className="flex-1 w-full p-4 bg-black/40 text-white rounded-xl relative overflow-y-auto min-h-[100px]">
-                {isInfoLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-300"></div>
-                    </div>
-                )}
-                {additionalInfo && !isInfoLoading && (
-                    <p className="whitespace-pre-wrap">{additionalInfo}</p>
-                )}
-            </div>
+        {error && !isLoading && <p className="text-red-400 text-center py-2">{error}</p>}
+
+        {(isSourceDefinitionLoading || sourceDefinition) &&
+            <InfoBox 
+                title={t('definition_for', { word: inputText.substring(0, 20) + (inputText.length > 20 ? '...' : '') })}
+                content={sourceDefinition}
+                isLoading={isSourceDefinitionLoading}
+            />
         }
+        {(isSourceExamplesLoading || sourceExamples) &&
+            <InfoBox 
+                title={t('examples_for', { word: inputText.substring(0, 20) + (inputText.length > 20 ? '...' : '') })}
+                content={sourceExamples}
+                isLoading={isSourceExamplesLoading}
+            />
+        }
+        {(isTargetDefinitionLoading || targetDefinition) &&
+            <InfoBox 
+                title={t('definition_for', { word: outputText.substring(0, 20) + (outputText.length > 20 ? '...' : '') })}
+                content={targetDefinition}
+                isLoading={isTargetDefinitionLoading}
+            />
+        }
+        {(isTargetExamplesLoading || targetExamples) &&
+            <InfoBox 
+                title={t('examples_for', { word: outputText.substring(0, 20) + (outputText.length > 20 ? '...' : '') })}
+                content={targetExamples}
+                isLoading={isTargetExamplesLoading}
+            />
+        }
+
       </div>
       
       <button
         onClick={handleTranslate}
         disabled={isLoading || !inputText}
         style={buttonStyle}
-        className="mt-6 w-full py-4 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed flex-shrink-0"
+        className="mt-4 w-full py-4 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed flex-shrink-0"
       >
         {isLoading ? t('translating') : t('translate_button')}
       </button>
