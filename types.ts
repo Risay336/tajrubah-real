@@ -20,6 +20,7 @@ export interface ChatMessage {
   timestamp: string;
   isMe: boolean;
   repliedToImage?: GalleryImage;
+  translation?: string;
 }
 
 export interface SavedSticker {
@@ -65,8 +66,29 @@ export interface ClockSettings {
   position: ClockPosition;
 }
 
+export interface ChatSettings {
+  wallpaper: string;
+  myBubbleColor: string;
+  otherBubbleColor: string;
+  textSize: 'text-sm' | 'text-base' | 'text-lg';
+  anonymousMode: boolean;
+  autoTranslate: boolean;
+  translateToLang: Language;
+  translateScope: 'all' | 'hour' | 'future' | null;
+}
+
+
 export interface Settings {
   language: Language;
   theme: ThemeSettings;
   clock: ClockSettings;
+  chat: ChatSettings;
 }
+
+// Music Types
+export interface Track {
+    name: string;
+    url: string; // This will be a blob URL
+}
+
+export type PlaybackMode = 'repeat_one' | 'repeat_all' | 'off';

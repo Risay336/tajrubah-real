@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Screen, GalleryImage, User } from './types';
 import HomeScreen from './screens/HomeScreen';
 import CalculatorScreen from './screens/CalculatorScreen';
@@ -13,6 +13,7 @@ import { useAuth } from './contexts/AuthContext';
 import AuthScreen from './screens/AuthScreen';
 import LoveAnimation from './components/LoveAnimation';
 import ViewProfileModal from './components/ViewProfileModal';
+import { useMusic } from './contexts/MusicContext';
 
 const App: React.FC = () => {
   const [activeScreen, setActiveScreen] = useState<Screen>(Screen.Home);
@@ -25,6 +26,9 @@ const App: React.FC = () => {
 
   const { settings } = useSettings();
   const { user, loading } = useAuth();
+  const { currentTrack, isPlaying, volume, playbackMode, playNext } = useMusic();
+  const audioRef = useRef<HTMLAudioElement>(null);
+
 
   useEffect(() => {
     document.documentElement.lang = settings.language;
@@ -38,6 +42,34 @@ const App: React.FC = () => {
     }, 4000); // Animation lasts 4 seconds
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (currentTrack && audio.src !== currentTrack.url) {
+      audio.src = currentTrack.url;
+    }
+
+    if (isPlaying && currentTrack) {
+        audio.play().catch(e => console.error("Audio play failed:", e));
+    } else {
+        audio.pause();
+    }
+  }, [isPlaying, currentTrack]);
+  
+  useEffect(() => {
+      if (audioRef.current) {
+          audioRef.current.volume = volume;
+      }
+  }, [volume]);
+
+  const handleAudioEnded = () => {
+    if (playbackMode !== 'repeat_one') {
+        playNext();
+    }
+  };
+
 
   const handleReplyToImage = (image: GalleryImage) => {
     setReplyingToImage(image);
@@ -107,6 +139,11 @@ const App: React.FC = () => {
   return (
     <div className={`h-screen w-screen flex flex-col font-sans bg-gray-900 overflow-hidden ${settings.language === 'ar' ? 'font-tajawal' : 'font-nunito'}`}>
       {showStartupAnimation && <LoveAnimation />}
+      <audio 
+        ref={audioRef} 
+        onEnded={handleAudioEnded} 
+        loop={playbackMode === 'repeat_one'}
+      />
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-500"
         style={{ backgroundImage: `url(${wallpaper})` }}

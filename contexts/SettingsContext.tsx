@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Settings, Language, ThemeColor, ThemeSettings, ClockSettings } from '../types';
+import { Settings, Language, ThemeColor, ThemeSettings, ClockSettings, ChatSettings } from '../types';
 
 const THEMES: Record<string, ThemeColor> = {
     'sayangku_blue': { name: 'Sayangku Blue', gradient: 'linear-gradient(to top, #0d3b66, #2a628f)', main: '#2a628f' },
@@ -19,6 +19,16 @@ const defaultSettings: Settings = {
     font: 'font-nunito',
     position: 'center',
   },
+  chat: {
+    wallpaper: 'https://picsum.photos/seed/chatbg/800/1200',
+    myBubbleColor: '#2563eb', // blue-600
+    otherBubbleColor: '#4b5563', // gray-600
+    textSize: 'text-base',
+    anonymousMode: false,
+    autoTranslate: false,
+    translateToLang: 'en',
+    translateScope: null,
+  }
 };
 
 interface SettingsContextType {
@@ -33,7 +43,15 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [settings, setSettings] = useState<Settings>(() => {
     try {
       const storedSettings = localStorage.getItem('sayangku-settings');
-      return storedSettings ? JSON.parse(storedSettings) : defaultSettings;
+      if (storedSettings) {
+        const parsed = JSON.parse(storedSettings);
+        // Ensure chat settings exist
+        if (!parsed.chat) {
+          parsed.chat = defaultSettings.chat;
+        }
+        return parsed;
+      }
+      return defaultSettings;
     } catch (error) {
       console.error("Could not parse settings from localStorage", error);
       return defaultSettings;
@@ -54,6 +72,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       ...newSettings,
       theme: { ...prev.theme, ...newSettings.theme },
       clock: { ...prev.clock, ...newSettings.clock },
+      chat: { ...prev.chat, ...newSettings.chat },
     }));
   };
 

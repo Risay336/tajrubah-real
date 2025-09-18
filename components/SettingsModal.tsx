@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import useTranslation from '../hooks/useTranslation';
-import { Language, ThemeColor, ClockFont, ClockPosition, User } from '../types';
+import { Language, ThemeColor, ClockFont, ClockPosition, User, Track } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useMusic } from '../contexts/MusicContext';
 
-type SettingsPage = 'main' | 'theme' | 'language' | 'clock' | 'profile';
+type SettingsPage = 'main' | 'theme' | 'language' | 'clock' | 'profile' | 'chat_settings' | 'music';
 
 const SubPageButton: React.FC<{ onClick: () => void; isActive?: boolean; children: React.ReactNode; className?: string }> = ({ onClick, isActive = false, children, className = '' }) => (
     <button
@@ -15,14 +16,35 @@ const SubPageButton: React.FC<{ onClick: () => void; isActive?: boolean; childre
     </button>
 );
 
+const ToggleSwitch: React.FC<{ checked: boolean; onChange: (checked: boolean) => void }> = ({ checked, onChange }) => (
+  <button onClick={() => onChange(!checked)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${checked ? 'bg-blue-500' : 'bg-gray-600'}`}>
+    <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+  </button>
+);
+
+const chatWallpapers = [
+  'https://picsum.photos/seed/chatbg/800/1200',
+  'https://picsum.photos/seed/chatbg2/800/1200',
+  'https://picsum.photos/seed/chatbg3/800/1200',
+  'https://picsum.photos/seed/chatbg4/800/1200',
+];
+
+const bubbleColors = ['#2563eb', '#4b5563', '#be123c', '#166534', '#86198f', '#b45309'];
+
+
 const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const [page, setPage] = useState<SettingsPage>('main');
   const { settings, updateSettings, availableThemes } = useSettings();
   const { t, currentLang } = useTranslation();
   const { user, updateProfile, logout } = useAuth();
+  const { playlist, currentTrack, isPlaying, volume, playbackMode, addTrack, removeTrack, playTrack, togglePlay, setVolume, setPlaybackMode, reorderPlaylist } = useMusic();
+  
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState<User | null>(user);
+  
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const wallpaperInputRef = useRef<HTMLInputElement>(null);
+  const musicInputRef = useRef<HTMLInputElement>(null);
   const isRtl = currentLang === 'ar';
 
   useEffect(() => {
@@ -55,6 +77,27 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
     }
   };
 
+  const handleChatWallpaperUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            updateSettings({ chat: { ...settings.chat, wallpaper: event.target!.result as string } });
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+  }
+
+  const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        const newTrack: Track = {
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            url: URL.createObjectURL(file)
+        };
+        addTrack(newTrack);
+    }
+  }
+  
   const renderContent = () => {
     switch (page) {
       case 'main':
@@ -65,8 +108,8 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
               <button className="settings-main-btn" onClick={() => setPage('profile')}>{t('profile')}</button>
               <button className="settings-main-btn" onClick={() => setPage('theme')}>{t('themes')}</button>
               <button className="settings-main-btn" onClick={() => setPage('language')}>{t('language')}</button>
-              <button className="settings-main-btn" disabled>{t('chat_settings')}</button>
-              <button className="settings-main-btn" disabled>{t('music')}</button>
+              <button className="settings-main-btn" onClick={() => setPage('chat_settings')}>{t('chat_settings')}</button>
+              <button className="settings-main-btn" onClick={() => setPage('music')}>{t('music')}</button>
               <button className="settings-main-btn" disabled>{t('more')}</button>
             </div>
           </>
@@ -195,6 +238,123 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             </div>
           </>
         );
+      
+      case 'chat_settings':
+        const { chat } = settings;
+        return (
+            <>
+                <h2 className="text-xl font-bold mb-6">{t('chat_settings')}</h2>
+                <div className="space-y-5">
+                    <div>
+                        <h3 className="font-semibold mb-2">{t('chat_wallpaper')}</h3>
+                        <div className="grid grid-cols-4 gap-2 mb-2">
+                            {chatWallpapers.map((url, i) => (
+                                <img key={i} src={url} onClick={() => updateSettings({ chat: { ...chat, wallpaper: url } })} className={`w-full h-16 object-cover rounded-md cursor-pointer border-2 ${chat.wallpaper === url ? 'border-blue-400' : 'border-transparent'}`} />
+                            ))}
+                        </div>
+                        <button onClick={() => wallpaperInputRef.current?.click()} className="w-full py-2 bg-white/10 rounded-lg text-sm">{t('upload')}</button>
+                        <input type="file" ref={wallpaperInputRef} onChange={handleChatWallpaperUpload} className="hidden" accept="image/*" />
+                    </div>
+                    <div>
+                        <h3 className="font-semibold mb-2">{t('my_bubble_color')}</h3>
+                        <div className="flex gap-2">{bubbleColors.map(color => <button key={color} style={{ backgroundColor: color }} onClick={() => updateSettings({ chat: { ...chat, myBubbleColor: color } })} className={`w-8 h-8 rounded-full ${chat.myBubbleColor === color ? 'ring-2 ring-white' : ''}`} />)}</div>
+                    </div>
+                     <div>
+                        <h3 className="font-semibold mb-2">{t('other_bubble_color')}</h3>
+                        <div className="flex gap-2">{bubbleColors.map(color => <button key={color} style={{ backgroundColor: color }} onClick={() => updateSettings({ chat: { ...chat, otherBubbleColor: color } })} className={`w-8 h-8 rounded-full ${chat.otherBubbleColor === color ? 'ring-2 ring-white' : ''}`} />)}</div>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold mb-2">{t('chat_text_size')}</h3>
+                        <div className="flex gap-2">
+                           <SubPageButton className="flex-1" isActive={chat.textSize === 'text-sm'} onClick={() => updateSettings({ chat: { ...chat, textSize: 'text-sm'} })}>{t('small')}</SubPageButton>
+                           <SubPageButton className="flex-1" isActive={chat.textSize === 'text-base'} onClick={() => updateSettings({ chat: { ...chat, textSize: 'text-base'} })}>{t('medium')}</SubPageButton>
+                           <SubPageButton className="flex-1" isActive={chat.textSize === 'text-lg'} onClick={() => updateSettings({ chat: { ...chat, textSize: 'text-lg'} })}>{t('large')}</SubPageButton>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-lg">
+                        <div>
+                            <h3 className="font-semibold">{t('anonymous_mode')}</h3>
+                            <p className="text-xs text-gray-400">{t('anonymous_mode_desc')}</p>
+                        </div>
+                        <ToggleSwitch checked={chat.anonymousMode} onChange={val => updateSettings({ chat: { ...chat, anonymousMode: val } })} />
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-lg">
+                        <div className="flex justify-between items-center">
+                            <div>
+                               <h3 className="font-semibold">{t('auto_translate_chat')}</h3>
+                               <p className="text-xs text-gray-400">{t('auto_translate_chat_desc')}</p>
+                            </div>
+                            <ToggleSwitch checked={chat.autoTranslate} onChange={val => updateSettings({ chat: { ...chat, autoTranslate: val, translateScope: val ? 'future' : null } })} />
+                        </div>
+                        {chat.autoTranslate && (
+                            <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                                <label className="block text-sm font-semibold">{t('translate_to')}</label>
+                                <select 
+                                    value={chat.translateToLang} 
+                                    onChange={(e) => updateSettings({ chat: { ...chat, translateToLang: e.target.value as Language }})} 
+                                    className="w-full bg-white/10 p-2 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <option value="en" className="bg-gray-700 text-white">{t('english')}</option>
+                                    <option value="id" className="bg-gray-700 text-white">{t('indonesian')}</option>
+                                    <option value="ar" className="bg-gray-700 text-white">{t('arabic')}</option>
+                                </select>
+                                <label className="block text-sm font-semibold mt-2">{t('translation_scope')}</label>
+                                <div className="flex gap-2">
+                                    <SubPageButton className="flex-1 text-xs" isActive={chat.translateScope === 'future'} onClick={() => updateSettings({ chat: { ...chat, translateScope: 'future'} })}>{t('translate_future')}</SubPageButton>
+                                    <SubPageButton className="flex-1 text-xs" isActive={chat.translateScope === 'hour'} onClick={() => updateSettings({ chat: { ...chat, translateScope: 'hour'} })}>{t('translate_hour')}</SubPageButton>
+                                    <SubPageButton className="flex-1 text-xs" isActive={chat.translateScope === 'all'} onClick={() => updateSettings({ chat: { ...chat, translateScope: 'all'} })}>{t('translate_all')}</SubPageButton>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </>
+        );
+      case 'music':
+        return (
+            <>
+                <h2 className="text-xl font-bold mb-6">{t('music')}</h2>
+                <div className="space-y-4">
+                    <button onClick={() => musicInputRef.current?.click()} className="w-full py-3 bg-blue-600 rounded-lg font-semibold">{t('upload_music')}</button>
+                    <input type="file" ref={musicInputRef} onChange={handleMusicUpload} className="hidden" accept="audio/*" />
+                     <div>
+                        <h3 className="font-semibold mb-2">{t('playback_mode')}</h3>
+                        <div className="flex gap-2">
+                            <SubPageButton className="flex-1" isActive={playbackMode === 'repeat_one'} onClick={() => setPlaybackMode('repeat_one')}>{t('repeat_track')}</SubPageButton>
+                            <SubPageButton className="flex-1" isActive={playbackMode === 'repeat_all'} onClick={() => setPlaybackMode('repeat_all')}>{t('next_track')}</SubPageButton>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold mb-2">{t('volume')}</h3>
+                        <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} className="w-full" />
+                    </div>
+                    <div>
+                        <h3 className="font-semibold mb-2">{t('playlist')}</h3>
+                        <div className="max-h-48 overflow-y-auto bg-white/5 rounded-lg p-2 space-y-2">
+                            {playlist.length === 0 ? <p className="text-center text-gray-400 py-4">{t('empty_playlist')}</p> :
+                             playlist.map((track, index) => (
+                                <div key={index} className={`flex items-center gap-2 p-2 rounded-md ${currentTrack?.url === track.url ? 'bg-blue-500/30' : 'bg-white/5'}`}>
+                                    <button onClick={() => playTrack(index)}>
+                                        {isPlaying && currentTrack?.url === track.url ? 
+                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg> :
+                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>}
+                                    </button>
+                                    <p className="flex-grow truncate text-sm">{track.name}</p>
+                                    <div className="flex flex-col">
+                                       <button disabled={index === 0} onClick={() => reorderPlaylist(index, index - 1)} className="disabled:opacity-20">▲</button>
+                                       <button disabled={index === playlist.length - 1} onClick={() => reorderPlaylist(index, index + 1)} className="disabled:opacity-20">▼</button>
+                                    </div>
+                                    <button onClick={() => removeTrack(index)}>
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                    </button>
+                                </div>
+                             ))}
+                        </div>
+                    </div>
+                </div>
+            </>
+        )
+
     }
   };
   
@@ -233,15 +393,15 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
           width: 100%;
           text-align: left;
           padding: 1.25rem; /* p-5 */
-          font-size: 1.25rem; /* text-xl */
-          line-height: 1.75rem;
+          font-size: 1rem; /* text-lg */
+          line-height: 1.5rem;
           background-color: rgba(255, 255, 255, 0.05);
           border-radius: 0.75rem; /* rounded-xl */
           transition: all 0.3s ease-out;
         }
         .settings-main-btn:hover:not(:disabled) {
           background-color: rgba(255, 255, 255, 0.1);
-          transform: translateY(-4px) scale(1.02);
+          transform: translateY(-2px) scale(1.01);
         }
         .settings-main-btn:disabled {
           opacity: 0.5;

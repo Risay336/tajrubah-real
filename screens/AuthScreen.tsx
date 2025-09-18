@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import useTranslation from '../hooks/useTranslation';
 import { User, Language } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
+import { logoBase64 } from '../assets/logo';
 
 type AuthStep = 'welcome' | 'email' | 'profile' | 'success';
 
@@ -104,7 +105,7 @@ const AuthScreen: React.FC = () => {
             case 'welcome':
                 return (
                     <>
-                        <img src="/logo.png" alt="Sayangku Logo" className="w-24 h-24 rounded-full shadow-lg mb-4" />
+                        <img src={logoBase64} alt="Sayangku Logo" className="w-24 h-24 rounded-full shadow-lg mb-4" />
                         <h1 className="text-4xl font-bold font-script text-white mb-2">{t('welcome_to_sayangku')}</h1>
                         <p className="text-blue-200 mb-8">{t('connect_with_google')}</p>
                         <div className="w-full space-y-4">

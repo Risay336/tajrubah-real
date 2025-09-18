@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useTranslation from '../hooks/useTranslation';
 import { useSettings } from '../contexts/SettingsContext';
+import { logoBase64 } from '../assets/logo';
 
 interface LogoProps {
     onOpenSettings: () => void;
@@ -8,7 +9,7 @@ interface LogoProps {
 
 const Heart: React.FC<{ style: React.CSSProperties }> = ({ style }) => (
   <div className="absolute text-blue-300" style={style}>
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" viewBox="0 0 20 20" fill="currentColor">
+    <svg xmlns="http://www.w.org/2000/svg" className="h-full w-full" viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
     </svg>
   </div>
@@ -73,7 +74,7 @@ const Logo: React.FC<LogoProps> = ({ onOpenSettings }) => {
         {showLove && <LoveEffect />}
         <div className="relative">
             <button onClick={handleClick} className="transition-transform duration-300 hover:scale-110 focus:outline-none">
-                <img src="/logo.png" alt="Sayangku Logo" className="w-16 h-16 rounded-full shadow-lg" />
+                <img src={logoBase64} alt="Sayangku Logo" className="w-16 h-16 rounded-full shadow-lg" />
             </button>
             {showMenu && (
                 <div className={`absolute top-20 bg-black/50 backdrop-blur-lg text-white rounded-lg shadow-2xl overflow-hidden animate-fade-in-down ${isRtl ? 'right-0' : 'left-0'}`}>
