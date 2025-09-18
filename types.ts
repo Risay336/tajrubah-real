@@ -4,6 +4,7 @@ export enum Screen {
   Chat = 'CHAT',
   Translator = 'TRANSLATOR',
   Gallery = 'GALLERY',
+  Practice = 'PRACTICE',
 }
 
 export interface User {
@@ -93,3 +94,19 @@ export interface Track {
 }
 
 export type PlaybackMode = 'repeat_one' | 'repeat_all' | 'off';
+
+// Practice Hub Types
+export interface PracticeItem {
+  id: number;
+  front: string;
+  back: string;
+}
+
+export interface PracticeSet {
+  id: number;
+  title: string;
+  description: string;
+  sourceLang: string;
+  targetLang: string;
+  items: PracticeItem[];
+}

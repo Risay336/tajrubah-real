@@ -5,6 +5,7 @@ import CalculatorScreen from './screens/CalculatorScreen';
 import ChatScreen from './screens/ChatScreen';
 import TranslatorScreen from './screens/TranslatorScreen';
 import GalleryScreen from './screens/GalleryScreen';
+import PracticeScreen from './screens/PracticeScreen';
 import BottomNav from './components/BottomNav';
 import Logo from './components/Logo';
 import SettingsModal from './components/SettingsModal';
@@ -96,7 +97,7 @@ const App: React.FC = () => {
   const renderScreen = useCallback(() => {
     switch (activeScreen) {
       case Screen.Home:
-        return <HomeScreen wallpaper={wallpaper} setWallpaper={setWallpaper} />;
+        return <HomeScreen wallpaper={wallpaper} setWallpaper={setWallpaper} onNavigateToPractice={() => setActiveScreen(Screen.Practice)} />;
       case Screen.Calculator:
         return <CalculatorScreen />;
       case Screen.Chat:
@@ -114,8 +115,10 @@ const App: React.FC = () => {
                     viewImageId={viewImageId}
                     onClearViewImageId={clearViewImageId}
                 />;
+      case Screen.Practice:
+        return <PracticeScreen />;
       default:
-        return <HomeScreen wallpaper={wallpaper} setWallpaper={setWallpaper} />;
+        return <HomeScreen wallpaper={wallpaper} setWallpaper={setWallpaper} onNavigateToPractice={() => setActiveScreen(Screen.Practice)} />;
     }
   }, [activeScreen, wallpaper, replyingToImage, viewImageId]);
 
