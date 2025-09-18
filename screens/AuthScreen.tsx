@@ -69,6 +69,7 @@ const AuthScreen: React.FC = () => {
     const { login, signUp } = useAuth();
     const { t } = useTranslation();
     const avatarInputRef = useRef<HTMLInputElement>(null);
+    const today = new Date().toISOString().split('T')[0];
 
     const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -118,14 +119,27 @@ const AuthScreen: React.FC = () => {
                 return (
                     <form onSubmit={handleEmailSubmit} className="w-full flex flex-col items-center">
                         <h2 className="text-3xl font-bold text-white mb-6">{t('email_address')}</h2>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            className="w-full bg-white/10 text-white py-3 px-5 rounded-full text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
-                            required
-                        />
+                        <div className="relative w-full mb-6">
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                className="w-full bg-white/10 text-white py-3 pl-5 pr-28 rounded-full text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            />
+                             <button
+                                type="button"
+                                onClick={() => {
+                                    if (email && !email.includes('@')) {
+                                        setEmail(email + '@gmail.com');
+                                    }
+                                }}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/20 text-white text-xs font-bold py-1.5 px-3 rounded-full hover:bg-white/30 transition-colors"
+                            >
+                                @gmail.com
+                            </button>
+                        </div>
                         <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-full text-lg hover:bg-blue-700 transition-transform hover:scale-105 disabled:bg-gray-500" disabled={!email}>{t('continue')}</button>
                     </form>
                 );
@@ -155,6 +169,7 @@ const AuthScreen: React.FC = () => {
                             placeholder={t('date_of_birth')}
                             className="w-full bg-white/10 text-white py-3 px-5 rounded-full text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
                             required
+                            max={today}
                         />
                         <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-full text-lg hover:bg-blue-700 transition-transform hover:scale-105 disabled:bg-gray-500" disabled={!profile.username || !profile.dob}>{t('confirm')}</button>
                     </form>
