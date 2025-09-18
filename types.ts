@@ -83,6 +83,7 @@ export interface Settings {
   theme: ThemeSettings;
   clock: ClockSettings;
   chat: ChatSettings;
+  scientificCalculator: boolean;
 }
 
 // Music Types

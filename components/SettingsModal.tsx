@@ -5,7 +5,7 @@ import { Language, ThemeColor, ClockFont, ClockPosition, User, Track } from '../
 import { useAuth } from '../contexts/AuthContext';
 import { useMusic } from '../contexts/MusicContext';
 
-type SettingsPage = 'main' | 'theme' | 'language' | 'clock' | 'profile' | 'chat_settings' | 'music';
+type SettingsPage = 'main' | 'theme' | 'language' | 'clock' | 'profile' | 'chat_settings' | 'music' | 'more';
 
 const SubPageButton: React.FC<{ onClick: () => void; isActive?: boolean; children: React.ReactNode; className?: string }> = ({ onClick, isActive = false, children, className = '' }) => (
     <button
@@ -110,7 +110,7 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
               <button className="settings-main-btn" onClick={() => setPage('language')}>{t('language')}</button>
               <button className="settings-main-btn" onClick={() => setPage('chat_settings')}>{t('chat_settings')}</button>
               <button className="settings-main-btn" onClick={() => setPage('music')}>{t('music')}</button>
-              <button className="settings-main-btn" disabled>{t('more')}</button>
+              <button className="settings-main-btn" onClick={() => setPage('more')}>{t('more')}</button>
             </div>
           </>
         );
@@ -353,8 +353,23 @@ const SettingsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
                     </div>
                 </div>
             </>
-        )
-
+        );
+        case 'more':
+            return (
+                <>
+                    <h2 className="text-xl font-bold mb-6">{t('more')}</h2>
+                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-lg">
+                        <div>
+                            <h3 className="font-semibold">{t('scientific_calculator')}</h3>
+                            <p className="text-xs text-gray-400">{t('scientific_calculator_desc')}</p>
+                        </div>
+                        <ToggleSwitch
+                            checked={settings.scientificCalculator}
+                            onChange={val => updateSettings({ scientificCalculator: val })}
+                        />
+                    </div>
+                </>
+            );
     }
   };
   

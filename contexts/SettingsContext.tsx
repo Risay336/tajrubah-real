@@ -28,7 +28,8 @@ const defaultSettings: Settings = {
     autoTranslate: false,
     translateToLang: 'en',
     translateScope: null,
-  }
+  },
+  scientificCalculator: false,
 };
 
 interface SettingsContextType {
@@ -45,11 +46,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       const storedSettings = localStorage.getItem('sayangku-settings');
       if (storedSettings) {
         const parsed = JSON.parse(storedSettings);
-        // Ensure chat settings exist
+        // Ensure nested settings objects exist for backward compatibility
         if (!parsed.chat) {
           parsed.chat = defaultSettings.chat;
         }
-        return parsed;
+        if (typeof parsed.scientificCalculator !== 'boolean') {
+          parsed.scientificCalculator = defaultSettings.scientificCalculator;
+        }
+        return { ...defaultSettings, ...parsed };
       }
       return defaultSettings;
     } catch (error) {

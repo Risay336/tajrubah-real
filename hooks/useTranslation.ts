@@ -117,7 +117,9 @@ const en = {
     "strikethrough": "Strikethrough",
     "text_color": "Text Color",
     "spoiler": "Spoiler",
-    "spoiler_hidden_text": "Spoiler: Click to reveal"
+    "spoiler_hidden_text": "Spoiler: Click to reveal",
+    "scientific_calculator": "Scientific Calculator",
+    "scientific_calculator_desc": "Enable a more advanced calculator with scientific functions."
 };
 
 const id = {
@@ -206,7 +208,9 @@ const id = {
     "logout": "Keluar",
     "save_changes": "Simpan Perubahan",
     "edit_profile": "Ubah Profil",
-    "view_profile": "Lihat Profil"
+    "view_profile": "Lihat Profil",
+    "scientific_calculator": "Kalkulator Ilmiah",
+    "scientific_calculator_desc": "Aktifkan kalkulator yang lebih canggih dengan fungsi ilmiah."
 };
 
 const ar = {
@@ -297,7 +301,9 @@ const ar = {
     "logout": "تسجيل الخروج",
     "save_changes": "حفظ التغييرات",
     "edit_profile": "تعديل الملف الشخصي",
-    "view_profile": "عرض الملف الشخصي"
+    "view_profile": "عرض الملف الشخصي",
+    "scientific_calculator": "آلة حاسبة علمية",
+    "scientific_calculator_desc": "تمكين آلة حاسبة أكثر تقدمًا مع وظائف علمية."
 };
 
 const translations = { en, id, ar };
