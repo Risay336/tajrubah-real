@@ -22,6 +22,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ wallpaper, setWallpaper, onNavi
   const { settings } = useSettings();
   const { time, day } = useClock(settings.language);
   const [showWallpaperMenu, setShowWallpaperMenu] = useState(false);
+  const [isFlipping, setIsFlipping] = useState(false);
   const { t } = useTranslation();
   const isRtl = settings.language === 'ar';
 
@@ -35,6 +36,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ wallpaper, setWallpaper, onNavi
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  const handlePracticeClick = () => {
+    if (isFlipping) return;
+    setIsFlipping(true);
+    setTimeout(() => {
+        onNavigateToPractice();
+        // Reset state after navigating, ready for next time
+        setTimeout(() => setIsFlipping(false), 100);
+    }, 600); // Duration matches animation
   };
 
   const positionClasses: Record<ClockPosition, string> = {
@@ -83,19 +94,30 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ wallpaper, setWallpaper, onNavi
             )}
         </div>
 
-        {/* Practice Hub Button - New */}
+        {/* Practice Hub Button - Updated */}
         <button
-            onClick={onNavigateToPractice}
+            onClick={handlePracticeClick}
             className="p-4 bg-black/50 rounded-full hover:bg-white/20 transition-all duration-300 shadow-lg transform hover:scale-110"
             aria-label={t('practice_hub')}
+            style={{ perspective: '1000px' }}
         >
-            <PracticeIcon className="w-8 h-8" />
+            <div className={isFlipping ? 'animate-flip-icon' : ''}>
+                <PracticeIcon className="w-8 h-8" />
+            </div>
         </button>
       </div>
 
       <style>{`
         .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .text-shadow-lg { text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        @keyframes flip-icon {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+        .animate-flip-icon {
+            animation: flip-icon 0.6s ease-in-out;
+            transform-style: preserve-3d;
+        }
       `}</style>
     </div>
   );
